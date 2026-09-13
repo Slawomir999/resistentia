@@ -11,14 +11,15 @@ The classical objection is that this scales badly with dimension. Run it on an
 embedding rather than on raw features and the dimension is yours to choose.
 """
 from __future__ import annotations
+
 import math
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Sequence
 
 
 def _dist(a: Sequence[float], b: Sequence[float]) -> float:
-    return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
+    return sum((x - y) ** 2 for x, y in zip(a, b, strict=True)) ** 0.5
 
 
 @dataclass
@@ -52,7 +53,7 @@ class NegativeSelection:
     _hi: list[float] = field(default_factory=list, repr=False)
     _self: list[Sequence[float]] = field(default_factory=list, repr=False)
 
-    def fit(self, self_samples: Sequence[Sequence[float]]) -> "NegativeSelection":
+    def fit(self, self_samples: Sequence[Sequence[float]]) -> NegativeSelection:
         if not self_samples:
             raise ValueError("need at least one sample of normal operation")
         d = len(self_samples[0])
@@ -64,7 +65,8 @@ class NegativeSelection:
             self.self_radius = self._calibrate(rng)
         self._lo = [min(s[i] for s in self_samples) for i in range(d)]
         self._hi = [max(s[i] for s in self_samples) for i in range(d)]
-        span = [max(h - l, 1e-9) for l, h in zip(self._lo, self._hi)]
+        span = [max(high - low, 1e-9)
+                for low, high in zip(self._lo, self._hi, strict=True)]
         # Widen the sampling box so detectors can sit outside the observed
         # envelope. The margin must exceed self_radius, or a tightly clustered
         # self-set leaves nowhere for a survivor to land.
@@ -75,8 +77,8 @@ class NegativeSelection:
             hi = [b[1] for b in self.bounds]
         else:
             pad = [max(0.25 * s, 3.0 * self.self_radius) for s in span]
-            lo = [l - p for l, p in zip(self._lo, pad)]
-            hi = [h + p for h, p in zip(self._hi, pad)]
+            lo = [low - m for low, m in zip(self._lo, pad, strict=True)]
+            hi = [high + m for high, m in zip(self._hi, pad, strict=True)]
         self.detectors = []
         tries = 0
         while len(self.detectors) < self.n_detectors and tries < self.max_tries:

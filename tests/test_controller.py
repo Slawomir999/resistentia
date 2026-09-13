@@ -1,6 +1,7 @@
 import pytest
-from resistentia import ResponseController, ControllerConfig
-from resistentia.signals import fuse, SignalWindow
+
+from resistentia import ControllerConfig, ResponseController
+from resistentia.signals import SignalWindow, fuse
 
 
 def test_signature_without_context_does_not_drive_a_response():

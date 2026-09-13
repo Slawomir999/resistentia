@@ -1,4 +1,7 @@
-import math, pytest
+import math
+
+import pytest
+
 from resistentia import kinetics as K
 
 
@@ -23,7 +26,7 @@ def test_degradation_is_monotone_and_faster_when_warmer():
     a = K.calibrate_pre_exponential(ref_temp_c=5, ea=ea, fraction_remaining=0.9, after=720)
     cold = K.integrate_potency([4.0] * 240, 1.0, ea, a)
     warm = K.integrate_potency([9.0] * 240, 1.0, ea, a)
-    assert all(x >= y for x, y in zip(cold, cold[1:]))
+    assert all(x >= y for x, y in zip(cold, cold[1:], strict=False))
     assert warm[-1] < cold[-1]
 
 

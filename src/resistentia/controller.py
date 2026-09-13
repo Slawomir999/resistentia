@@ -1,7 +1,9 @@
 """The controller: an activation stock and a lagged suppressor stock."""
 from __future__ import annotations
+
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Iterable, Sequence
+
 from .signals import SignalWindow, fuse
 
 

@@ -11,8 +11,9 @@ dramatic excursion that harms nothing.
 Substitute your own state equation and the rest of the library is unchanged.
 """
 from __future__ import annotations
+
+from collections.abc import Sequence
 from math import exp, log
-from typing import Sequence
 
 R_GAS = 8.314462618
 """Universal gas constant, J/(mol K)."""

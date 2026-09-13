@@ -1,7 +1,8 @@
 """Metrics computed from a response log. These are what the regimes are read from."""
 from __future__ import annotations
+
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 
 def episodes(firing: Sequence[bool]) -> list[tuple[int, int]]:
@@ -11,7 +12,8 @@ def episodes(firing: Sequence[bool]) -> list[tuple[int, int]]:
         if f and start is None:
             start = i
         elif not f and start is not None:
-            out.append((start, i)); start = None
+            out.append((start, i))
+            start = None
     if start is not None:
         out.append((start, len(firing)))
     return out

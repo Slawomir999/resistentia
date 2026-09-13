@@ -28,11 +28,11 @@ classifiers = [
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7", "ruff>=0.5"]
+dev = ["pytest>=7", "ruff==0.15.11"]
 
 [project.urls]
-Homepage = "https://github.com/CHANGEME/resistentia"
-Specification = "https://github.com/CHANGEME/resistentia/blob/main/SPEC.md"
+Homepage = "https://github.com/Slawomir999/resistentia"
+Specification = "https://github.com/Slawomir999/resistentia/blob/main/SPEC.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/resistentia"]
@@ -43,3 +43,9 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+# Pinned and explicit, so a newer ruff on a CI runner cannot fail a build that
+# passes locally. Widen the selection deliberately, not by accident.
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]   # line length is handled by the formatter, not the linter

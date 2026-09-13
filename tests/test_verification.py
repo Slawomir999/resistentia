@@ -5,12 +5,14 @@ These are not restatements of the implementation. Each checks the code against
 something outside it: a closed-form solution, a defining equation, a held-out
 sample, or an invariant that must hold for any correct implementation.
 """
-import math, random
+import math
+import random
+
 import pytest
-from resistentia import (ResponseController, ControllerConfig, NegativeSelection,
-                         classify, Regime)
-from resistentia.regimes import Thresholds
+
+from resistentia import ControllerConfig, NegativeSelection, Regime, ResponseController, classify
 from resistentia import kinetics as K
+from resistentia.regimes import Thresholds
 
 VALID = {r.value for r in Regime}
 

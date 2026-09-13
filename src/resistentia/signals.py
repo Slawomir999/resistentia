@@ -1,5 +1,6 @@
 """Signal fusion. Three channels, fused over a temporal window."""
 from __future__ import annotations
+
 from collections import deque
 from dataclasses import dataclass
 

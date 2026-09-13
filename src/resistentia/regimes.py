@@ -15,11 +15,13 @@ its own history, without instrumenting anything new.
 Thresholds are defaults, not laws. Override them for your domain and say so.
 """
 from __future__ import annotations
+
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from math import isnan
-from typing import Sequence
-from .metrics import response_metrics, ResponseMetrics
+
+from .metrics import ResponseMetrics, response_metrics
 
 
 class Regime(str, Enum):

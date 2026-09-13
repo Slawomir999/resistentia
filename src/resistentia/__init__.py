@@ -14,12 +14,12 @@ działania na rynku międzynarodowym", Akademia Ekonomiczna w Krakowie, 2003 —
 where the layered response architecture and the three response pathologies
 (immunodeficiency, hypersensitivity, autodestruction) were first set out.
 """
-from .controller import ResponseController, ControllerConfig, ControllerState
-from .signals import SignalWindow, fuse
-from .detectors import NegativeSelection
-from .metrics import episodes, response_metrics, ResponseMetrics
-from .regimes import Regime, classify, RegimeReport, analyse_log
 from . import kinetics
+from .controller import ControllerConfig, ControllerState, ResponseController
+from .detectors import NegativeSelection
+from .metrics import ResponseMetrics, episodes, response_metrics
+from .regimes import Regime, RegimeReport, analyse_log, classify
+from .signals import SignalWindow, fuse
 
 __version__ = "0.1.0"
 __all__ = [

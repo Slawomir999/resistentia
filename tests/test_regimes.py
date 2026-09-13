@@ -1,4 +1,4 @@
-from resistentia import classify, Regime, analyse_log, episodes, response_metrics
+from resistentia import Regime, analyse_log, classify, episodes, response_metrics
 
 
 def test_episodes_are_half_open_runs():
