@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+title: "resistentia: response termination for autonomous systems"
+message: "If you use this software, please cite it."
+type: software
+authors:
+  - family-names: Wyciślak
+    given-names: Sławomir
+    affiliation: Jagiellonian University, Kraków
+version: 0.1.0
+license: MIT
+abstract: >-
+  A reference implementation of response termination for autonomous and
+  semi-autonomous systems. Supplies an activation stock with a lagged suppressor
+  stock, danger-theory signal fusion in which a threat signature without a
+  distress context produces tolerance rather than a response, negative-selection
+  detectors, and a diagnostic that reads response pathologies from an existing
+  alerting log. Derived from the resistance concept set out in the author's 2003
+  doctoral dissertation.
+references:
+  - type: thesis
+    title: "Koncepcja rezystencji polskich przedsiębiorstw w warunkach działania na rynku międzynarodowym"
+    authors:
+      - family-names: Wyciślak
+        given-names: Sławomir
+    institution:
+      name: Akademia Ekonomiczna w Krakowie, Wydział Ekonomii
+    thesis-type: "Doctoral dissertation"
+    year: 2003

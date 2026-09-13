@@ -1,0 +1,471 @@
+<title>Alert Log Diagnosis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap">
+<style>
+:root{
+  --paper:#F5F3EF; --surface:#FFFFFF; --sunk:#EBE7E0;
+  --ink:#1A1614; --ink-2:#57504B; --ink-3:#8A817A;
+  --rule:#DFD9D1; --rule-2:#C7BEB3;
+  --bad:#A32B22; --bad-soft:#F3DCD8;
+  --good:#4A7A55; --good-soft:#DDE9DE;
+  --truth:#2F4858; --resp:#C77E23;
+  --warn:#8A5A12;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#14110F; --surface:#1E1A17; --sunk:#0F0C0A;
+  --ink:#EDE7E0; --ink-2:#ADA298; --ink-3:#7C726A;
+  --rule:#332C27; --rule-2:#4A413A;
+  --bad:#E2685C; --bad-soft:#3A1F1C;
+  --good:#7CB489; --good-soft:#1D2A20;
+  --truth:#7FA9BF; --resp:#E0A557;
+  --warn:#D6A059;
+}}
+:root[data-theme="dark"]{
+  --paper:#14110F; --surface:#1E1A17; --sunk:#0F0C0A;
+  --ink:#EDE7E0; --ink-2:#ADA298; --ink-3:#7C726A;
+  --rule:#332C27; --rule-2:#4A413A;
+  --bad:#E2685C; --bad-soft:#3A1F1C;
+  --good:#7CB489; --good-soft:#1D2A20;
+  --truth:#7FA9BF; --resp:#E0A557;
+  --warn:#D6A059;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:940px;margin:0 auto;padding-inline:20px;padding-block:34px 60px}
+h1{font-family:Newsreader,Georgia,serif;font-size:clamp(30px,5vw,46px);font-weight:500;
+  letter-spacing:-.015em;line-height:1.02;margin:0;text-wrap:balance}
+h2{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+p{margin:0}
+.mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+header{border-bottom:1px solid var(--ink);padding-bottom:18px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--bad);margin-bottom:12px}
+.lede{max-width:62ch;color:var(--ink-2);margin-top:14px;font-size:16px}
+
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:22px 0 6px}
+button{font:inherit;font-size:13.5px;padding:7px 13px;border:1px solid var(--rule-2);
+  background:var(--surface);color:var(--ink-2);border-radius:2px;cursor:pointer}
+button:hover{border-color:var(--ink-3);color:var(--ink)}
+button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button:focus-visible{outline:2px solid var(--bad);outline-offset:2px}
+.bar .sep{flex:1}
+.ghost{background:none;border-style:dashed}
+
+#drop{border:1.5px dashed var(--rule-2);border-radius:3px;background:var(--surface);
+  padding:14px 16px;margin-top:10px;transition:border-color .15s,background .15s}
+#drop.over{border-color:var(--bad);background:var(--bad-soft)}
+#drop label{display:block;font-size:12.5px;color:var(--ink-3);margin-bottom:7px}
+textarea{width:100%;min-height:92px;resize:vertical;border:1px solid var(--rule);
+  background:var(--paper);color:var(--ink);border-radius:2px;padding:9px 11px;
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;line-height:1.5}
+textarea:focus-visible{outline:2px solid var(--bad);outline-offset:1px}
+.err{color:var(--bad);font-size:13px;margin-top:8px}
+
+.report{margin-top:26px;border:1px solid var(--rule);border-radius:3px;background:var(--surface);overflow:hidden}
+.verdict{display:flex;gap:18px;align-items:flex-start;padding:20px 22px;border-bottom:1px solid var(--rule)}
+.stamp{flex:0 0 auto;font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;padding:6px 11px;border-radius:2px;white-space:nowrap}
+.s-bad{background:var(--bad-soft);color:var(--bad);border:1px solid var(--bad)}
+.s-good{background:var(--good-soft);color:var(--good);border:1px solid var(--good)}
+.vtext h3{font-family:Newsreader,Georgia,serif;font-weight:500;font-size:23px;margin:0 0 6px;letter-spacing:-.01em}
+.vtext ul{margin:0;padding-left:17px;color:var(--ink-2);font-size:14px}
+.vtext li{margin-bottom:3px}
+
+.strip{padding:18px 22px 14px;border-bottom:1px solid var(--rule)}
+.band{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center;margin-bottom:7px}
+.band .k{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);text-align:right}
+canvas{width:100%;display:block;border-radius:1px}
+.axis{display:grid;grid-template-columns:96px 1fr;gap:12px;margin-top:2px}
+.axis .t{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;color:var(--ink-3)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:13px;height:9px;border-radius:1px;display:inline-block}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+.tw{overflow-x:auto}
+th{text-align:left;font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:500;padding:11px 22px;
+  border-bottom:1px solid var(--rule-2);white-space:nowrap}
+td{padding:9px 22px;border-bottom:1px solid var(--rule)}
+tr:last-child td{border-bottom:none}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.d{color:var(--ink-2);font-size:13px}
+.flagged{color:var(--bad);font-weight:600}
+
+details{margin-top:26px;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+summary{padding:13px 18px;cursor:pointer;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+summary:focus-visible{outline:2px solid var(--bad);outline-offset:-2px}
+details[open] summary{border-bottom:1px solid var(--rule);color:var(--ink)}
+.dbody{padding:16px 18px 20px}
+.thr{display:grid;grid-template-columns:1fr auto;gap:10px 14px;align-items:center;max-width:520px}
+.thr label{font-size:13.5px;color:var(--ink-2)}
+.thr input{width:88px;font-family:"IBM Plex Mono",monospace;font-size:13px;padding:5px 8px;
+  border:1px solid var(--rule-2);background:var(--paper);color:var(--ink);border-radius:2px}
+.note{font-size:13px;color:var(--ink-2);line-height:1.55;max-width:66ch}
+.note code{font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--sunk);
+  padding:1px 5px;border-radius:2px}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--rule);
+  font-size:12.5px;color:var(--ink-3)}
+@media (max-width:620px){
+  .verdict{flex-direction:column;gap:12px}
+  .band,.axis{grid-template-columns:70px 1fr;gap:8px}
+  th,td{padding-inline:14px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">resistentia · RTS-1 conformance check</div>
+  <h1>Alert Log Diagnosis</h1>
+  <p class="lede">Most alerting is judged on whether it fires. This judges whether it
+  <em>stops</em>. Drop in a log — one row per sample, a column saying whether an alert was
+  active, and where you have it a column saying whether anything was actually wrong — and it
+  returns one of five regimes. Nothing is uploaded; the whole computation runs in this page.</p>
+</header>
+
+<div class="bar" id="samples"></div>
+
+<div id="drop">
+  <label for="paste">Paste CSV, JSON or JSONL — or drop a file anywhere on this page</label>
+  <textarea id="paste" spellcheck="false" placeholder="t,firing,truth&#10;0,0,0&#10;1,1,1&#10;2,1,1&#10;3,0,0"></textarea>
+  <div class="bar" style="margin:10px 0 0">
+    <button id="run">Diagnose</button>
+    <button class="ghost" id="copy">Copy report</button>
+    <span class="sep"></span>
+    <span class="mono" id="count" style="font-size:12px;color:var(--ink-3)"></span>
+  </div>
+  <div class="err" id="err" hidden></div>
+</div>
+
+<div class="report" id="report" hidden>
+  <div class="verdict">
+    <span class="stamp" id="stamp"></span>
+    <div class="vtext"><h3 id="vtitle"></h3><ul id="vlist"></ul></div>
+  </div>
+  <div class="strip">
+    <div class="band"><span class="k">Was wrong</span><canvas id="c-truth" height="26"></canvas></div>
+    <div class="band"><span class="k">Responded</span><canvas id="c-fire" height="26"></canvas></div>
+    <div class="axis"><span></span><span class="t"><span id="t0">start</span><span id="t1">end</span></span></div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--truth)"></i>a condition warranting response</span>
+      <span><i class="sw" style="background:var(--resp)"></i>the response was active</span>
+      <span><i class="sw" style="background:var(--bad)"></i>mismatch</span>
+    </div>
+  </div>
+  <div class="tw"><table><thead><tr><th>Metric</th><th>Value</th><th>What it means</th></tr></thead>
+    <tbody id="metrics"></tbody></table></div>
+</div>
+
+<details>
+  <summary>Thresholds</summary>
+  <div class="dbody">
+    <div class="thr">
+      <label for="th_term">Minimum termination rate — below this, responses do not end</label>
+      <input id="th_term" type="number" step="0.05" min="0" max="1" value="0.70">
+      <label for="th_cov">Minimum coverage — below this, real distress went unanswered</label>
+      <input id="th_cov" type="number" step="0.05" min="0" max="1" value="0.80">
+      <label for="th_false">Maximum false dwell — above this, it is reacting to itself</label>
+      <input id="th_false" type="number" step="0.05" min="0" max="1" value="0.15">
+      <label for="th_ratio">Hypersensitivity ratio — duty cycle vs. time anything was wrong</label>
+      <input id="th_ratio" type="number" step="0.5" min="1" value="2.0">
+      <label for="th_flip">Maximum flip rate — above this, the response oscillates</label>
+      <input id="th_flip" type="number" step="0.01" min="0" max="1" value="0.05">
+    </div>
+    <p class="note" style="margin-top:14px">Engineering defaults, not findings. A domain where
+    sustained response is normal — continuous process control, life support — should raise the
+    termination threshold and say so in whatever it reports.</p>
+  </div>
+</details>
+
+<details>
+  <summary>Log format</summary>
+  <div class="dbody">
+    <p class="note">One row per sample at a constant interval. Column names are matched loosely:
+    <code>firing</code> also accepts alert, alarm, active, state, response;
+    <code>truth</code> also accepts incident, warranted, actual, fault, ground_truth.
+    Values may be <code>1/0</code>, <code>true/false</code>, <code>yes/no</code>,
+    <code>alert/ok</code>. The truth column is optional — without it, coverage and false dwell
+    cannot be computed, but non-termination and oscillation still can, which is most of what
+    goes wrong.</p>
+    <p class="note" style="margin-top:10px">An episode still open at the end of the log counts as
+    terminated when the truth column is true at the final sample. A response that stays active
+    because its cause is still active has not failed to terminate; only one that outlives its
+    cause has. Specified in RTS-1 §5.</p>
+  </div>
+</details>
+
+<footer>resistentia 0.1.0 · MIT · computation runs locally in this page, nothing is uploaded</footer>
+</div>
+
+<script>
+/* ── sample logs ─────────────────────────────────────────── */
+const SAMPLES = {
+  "The alert nobody closes": [...Array(10).fill([0,0]),...Array(8).fill([1,1]),...Array(82).fill([1,0])],
+  "Flapping threshold":      Array.from({length:100},(_,i)=>[i%2===0?1:0,0]),
+  "Silent through an outage":[...Array(30).fill([0,0]),...Array(30).fill([0,1]),...Array(40).fill([0,0])],
+  "Firefighting":            [...Array(45).fill([0,0]),...Array(50).fill([1,0]),...Array(5).fill([1,1])],
+  "Working as intended":     [...Array(40).fill([0,0]),...Array(12).fill([1,1]),...Array(48).fill([0,0])],
+};
+const T_TRUE = new Set(["1","true","t","yes","y","on","alert","alerting","firing","active","open","alarm","critical","fault","incident","fail","failed"]);
+const T_FALSE= new Set(["0","false","f","no","n","off","ok","clear","closed","resolved","normal","pass","healthy",""]);
+const FIRE_KEYS = ["firing","fire","alert","alerting","alarm","active","state","response","responding","is_alert","alert_active","status"];
+const TRUTH_KEYS= ["truth","warranted","incident","actual","ground_truth","groundtruth","real","fault","problem","outage","breach"];
+
+function truthy(v){
+  const s = String(v).trim().toLowerCase();
+  if (T_TRUE.has(s)) return true;
+  if (T_FALSE.has(s)) return false;
+  const n = Number(s);
+  if (!Number.isNaN(n)) return n !== 0;
+  return null;
+}
+function pick(headers, keys){
+  const low = headers.map(h=>h.trim().toLowerCase().replace(/[^a-z0-9_]/g,""));
+  for (const k of keys){ const i = low.indexOf(k); if (i>=0) return i; }
+  for (const k of keys){ const i = low.findIndex(h=>h.includes(k)); if (i>=0) return i; }
+  return -1;
+}
+function parse(text){
+  const raw = text.trim();
+  if (!raw) throw new Error("Nothing to read.");
+  // JSON array or JSONL
+  if (raw[0]==="[" || raw[0]==="{"){
+    let rows;
+    try { rows = raw[0]==="[" ? JSON.parse(raw)
+        : raw.split(/\r?\n/).filter(Boolean).map(l=>JSON.parse(l)); }
+    catch(e){ throw new Error("That looks like JSON but will not parse: "+e.message); }
+    if (!rows.length) throw new Error("The log is empty.");
+    const keys = Object.keys(rows[0]);
+    const fi = pick(keys, FIRE_KEYS), ti = pick(keys, TRUTH_KEYS);
+    if (fi<0) throw new Error("No column saying whether an alert was active. Expected one of: "+FIRE_KEYS.slice(0,6).join(", ")+".");
+    return { firing: rows.map(r=>!!truthy(r[keys[fi]])),
+             truth: ti<0 ? null : rows.map(r=>!!truthy(r[keys[ti]])) };
+  }
+  // CSV / TSV
+  const lines = raw.split(/\r?\n/).filter(l=>l.trim()!=="");
+  const delim = (lines[0].match(/\t/g)||[]).length > (lines[0].match(/,/g)||[]).length ? "\t"
+              : (lines[0].match(/;/g)||[]).length > (lines[0].match(/,/g)||[]).length ? ";" : ",";
+  const cells = lines.map(l=>l.split(delim).map(c=>c.replace(/^"|"$/g,"")));
+  let head = cells[0], body = cells.slice(1);
+  let fi = pick(head, FIRE_KEYS), ti = pick(head, TRUTH_KEYS);
+  if (fi < 0){
+    // no header: single column of values, or two columns firing,truth
+    if (truthy(head[0]) === null)
+      throw new Error("No column saying whether an alert was active. Add a header row with a "
+        + "column called firing (or alert, alarm, active), and optionally truth.");
+    body = cells; fi = 0; ti = cells[0].length > 1 ? 1 : -1;
+  }
+  if (!body.length) throw new Error("The log has a header but no rows.");
+  const firing = [], truth = [];
+  body.forEach((r,i)=>{
+    const f = truthy(r[fi]);
+    if (f === null) throw new Error(`Row ${i+1}: cannot read "${r[fi]}" as true or false.`);
+    firing.push(f);
+    if (ti>=0) truth.push(!!truthy(r[ti]));
+  });
+  return { firing, truth: ti>=0 ? truth : null };
+}
+
+/* ── metrics + regimes: identical to the Python ──────────── */
+function episodes(f){ const out=[]; let s=null;
+  f.forEach((v,i)=>{ if(v&&s===null) s=i; else if(!v&&s!==null){out.push([s,i]); s=null;} });
+  if(s!==null) out.push([s,f.length]); return out; }
+
+function metrics(firing, truth){
+  const n = firing.length, eps = episodes(firing), lens = eps.map(([a,b])=>b-a);
+  const stillWarranted = truth ? !!truth[n-1] : false;
+  const terminated = eps.filter(([,b])=>b<n||stillWarranted).length;
+  let flips=0; for(let i=1;i<n;i++) if(firing[i]!==firing[i-1]) flips++;
+  let coverage=NaN, falseDwell=NaN;
+  if (truth){
+    const te = episodes(truth);
+    coverage = te.length ? te.filter(([a,b])=>firing.slice(a,b).some(Boolean)).length/te.length : NaN;
+    const clear = truth.map((t,i)=>t?null:i).filter(i=>i!==null);
+    falseDwell = clear.length ? clear.filter(i=>firing[i]).length/clear.length : NaN;
+  }
+  return { n, duty: lens.reduce((a,b)=>a+b,0)/n, nEp: eps.length,
+    meanDwell: lens.length?lens.reduce((a,b)=>a+b,0)/lens.length:0,
+    maxDwell: lens.length?Math.max(...lens):0,
+    termination: eps.length?terminated/eps.length:NaN,
+    flip: flips/n, coverage, falseDwell };
+}
+
+function classify(firing, truth, th){
+  const m = metrics(firing, truth), findings = [];
+  let regime = "healthy";
+  if (m.nEp === 0){
+    findings.push("no response at any point in the log");
+    return { regime: (truth && truth.some(Boolean)) ? "immunodeficient" : "undetermined", m, findings };
+  }
+  if (!Number.isNaN(m.termination) && m.termination < th.term){
+    findings.push(`termination rate ${m.termination.toFixed(2)} below ${th.term.toFixed(2)} — responses begin and do not end`);
+    regime = "nonterminating";
+  } else if (truth){
+    const frac = truth.filter(Boolean).length / truth.length;
+    if (frac === 0){
+      findings.push(`active for ${(m.falseDwell*100).toFixed(0)}% of a log in which nothing was wrong — the system is reacting to itself`);
+      regime = "autoreactive";
+    } else if (!Number.isNaN(m.coverage) && m.coverage < th.cov){
+      if (!Number.isNaN(m.falseDwell) && m.falseDwell > th.false_){
+        findings.push(`coverage ${m.coverage.toFixed(2)} while active for ${(m.falseDwell*100).toFixed(0)}% of the clear time — responding, but not to what is wrong`);
+        regime = "autoreactive";
+      } else {
+        findings.push(`coverage ${m.coverage.toFixed(2)} below ${th.cov.toFixed(2)} — real distress went unanswered`);
+        regime = "immunodeficient";
+      }
+    } else if (m.duty / frac > th.ratio){
+      findings.push(`duty cycle ${m.duty.toFixed(2)} is ${(m.duty/frac).toFixed(1)}× the fraction of time anything was wrong — response out of proportion`);
+      regime = "hypersensitive";
+    }
+  }
+  if (m.flip > th.flip){
+    findings.push(`flip rate ${m.flip.toFixed(3)} — the response oscillates`);
+    if (regime === "healthy") regime = "hypersensitive";
+  }
+  if (regime === "healthy") findings.push("responds to distress and stands down");
+  return { regime, m, findings };
+}
+
+const TITLES = {
+  healthy:"Responds, and stands down",
+  immunodeficient:"Distress went unanswered",
+  hypersensitive:"Responding out of proportion",
+  nonterminating:"Responses begin and do not end",
+  autoreactive:"Firing when nothing is wrong",
+  undetermined:"Not enough in the log to say",
+};
+
+/* ── rendering ───────────────────────────────────────────── */
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+function drawBand(id, series, colour, other){
+  const cv = document.getElementById(id), dpr = Math.min(devicePixelRatio||1,2);
+  const w = cv.clientWidth, h = 26;
+  cv.width = w*dpr; cv.height = h*dpr;
+  const x = cv.getContext("2d"); x.setTransform(dpr,0,0,dpr,0,0);
+  x.fillStyle = css("--sunk"); x.fillRect(0,0,w,h);
+  if (!series){ x.fillStyle = css("--ink-3");
+    x.font = '11px "IBM Plex Mono", monospace'; x.textBaseline="middle";
+    x.fillText("not supplied", 8, h/2); return; }
+  const n = series.length, bw = w/n;
+  for (let i=0;i<n;i++){
+    if (!series[i]) continue;
+    const mismatch = other && other[i] !== series[i];
+    x.fillStyle = mismatch ? css("--bad") : colour;
+    x.fillRect(i*bw, 0, Math.max(bw,0.8), h);
+  }
+}
+let LAST = null;
+function render(res, firing, truth){
+  LAST = { res, firing, truth };
+  const rep = document.getElementById("report"); rep.hidden = false;
+  const bad = res.regime !== "healthy";
+  const st = document.getElementById("stamp");
+  st.textContent = res.regime; st.className = "stamp " + (bad ? "s-bad" : "s-good");
+  document.getElementById("vtitle").textContent = TITLES[res.regime];
+  document.getElementById("vlist").innerHTML = res.findings.map(f=>`<li>${f}</li>`).join("");
+  drawBand("c-truth", truth, css("--truth"), firing);
+  drawBand("c-fire", firing, css("--resp"), truth);
+  document.getElementById("t0").textContent = "sample 0";
+  document.getElementById("t1").textContent = "sample " + (firing.length-1);
+  const m = res.m, th = readThresholds();
+  const pct = v => Number.isNaN(v) ? "—" : (v*100).toFixed(1)+"%";
+  const num = v => Number.isNaN(v) ? "—" : v.toFixed(3);
+  const rows = [
+    ["Samples", String(m.n), "length of the log"],
+    ["Duty cycle", pct(m.duty), "share of time a response was active", false],
+    ["Episodes", String(m.nEp), "distinct responses"],
+    ["Mean episode", m.meanDwell.toFixed(1)+" samples", "how long a response typically lasts"],
+    ["Termination rate", num(m.termination), "share of responses that ended",
+      !Number.isNaN(m.termination) && m.termination < th.term],
+    ["Flip rate", num(m.flip), "transitions per sample — oscillation", m.flip > th.flip],
+    ["Coverage", num(m.coverage), "share of real problems that got any response",
+      !Number.isNaN(m.coverage) && m.coverage < th.cov],
+    ["False dwell", pct(m.falseDwell), "share of clear time spent alerting",
+      !Number.isNaN(m.falseDwell) && m.falseDwell > th.false_],
+  ];
+  document.getElementById("metrics").innerHTML = rows.map(([k,v,d,flag])=>
+    `<tr><td>${k}</td><td class="n ${flag?"flagged":""}">${v}</td><td class="d">${d}</td></tr>`).join("");
+  document.getElementById("count").textContent = m.n + " samples" + (truth ? " · truth supplied" : " · no truth column");
+}
+function readThresholds(){
+  const g = id => parseFloat(document.getElementById(id).value);
+  return { term:g("th_term"), cov:g("th_cov"), false_:g("th_false"),
+           ratio:g("th_ratio"), flip:g("th_flip") };
+}
+function run(text){
+  const err = document.getElementById("err");
+  try{
+    const { firing, truth } = parse(text);
+    if (firing.length < 2) throw new Error("Need at least two samples.");
+    err.hidden = true;
+    render(classify(firing, truth, readThresholds()), firing, truth);
+  }catch(e){
+    err.hidden = false; err.textContent = e.message;
+    document.getElementById("report").hidden = true;
+  }
+}
+function sampleCSV(rows){
+  return "t,firing,truth\n" + rows.map((r,i)=>`${i},${r[0]},${r[1]}`).join("\n");
+}
+/* controls */
+const bar = document.getElementById("samples");
+Object.keys(SAMPLES).forEach((name,i)=>{
+  const b = document.createElement("button");
+  b.textContent = name; b.id = "sample-"+i; b.setAttribute("aria-pressed", i===0);
+  b.onclick = () => {
+    [...bar.children].forEach(c=>c.setAttribute("aria-pressed", c===b));
+    const t = sampleCSV(SAMPLES[name]);
+    document.getElementById("paste").value = t; run(t);
+  };
+  bar.appendChild(b);
+});
+document.getElementById("run").onclick = () => {
+  [...bar.children].forEach(c=>c.setAttribute("aria-pressed", false));
+  run(document.getElementById("paste").value);
+};
+document.getElementById("copy").onclick = async () => {
+  if (!LAST) return;
+  const { res } = LAST, m = res.m;
+  const txt = [`regime: ${res.regime}`,
+    `  samples          ${m.n}`,
+    `  duty cycle       ${m.duty.toFixed(3)}`,
+    `  episodes         ${m.nEp}`,
+    `  termination rate ${Number.isNaN(m.termination)?"—":m.termination.toFixed(3)}`,
+    `  flip rate        ${m.flip.toFixed(4)}`,
+    `  coverage         ${Number.isNaN(m.coverage)?"—":m.coverage.toFixed(3)}`,
+    `  false dwell      ${Number.isNaN(m.falseDwell)?"—":m.falseDwell.toFixed(3)}`,
+    ...res.findings.map(f=>"  "+f)].join("\n");
+  try{ await navigator.clipboard.writeText(txt);
+       const b = document.getElementById("copy"); const o = b.textContent;
+       b.textContent = "Copied"; setTimeout(()=>b.textContent=o, 1400);
+  }catch{ document.getElementById("paste").value = txt; }
+};
+document.querySelectorAll('.thr input').forEach(i=>i.addEventListener("input",()=>{
+  if (LAST) render(classify(LAST.firing, LAST.truth, readThresholds()), LAST.firing, LAST.truth);
+}));
+const drop = document.getElementById("drop");
+["dragenter","dragover"].forEach(e=>addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(e=>addEventListener(e,ev=>{
+  if(e==="dragleave" && ev.relatedTarget) return;
+  ev.preventDefault(); drop.classList.remove("over");}));
+addEventListener("drop", ev=>{
+  const f = ev.dataTransfer?.files?.[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById("paste").value = r.result;
+    [...bar.children].forEach(c=>c.setAttribute("aria-pressed", false)); run(r.result); };
+  r.readAsText(f);
+});
+addEventListener("resize", ()=>{ if(LAST) render(LAST.res, LAST.firing, LAST.truth); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>{ if(LAST) render(LAST.res,LAST.firing,LAST.truth); });
+new MutationObserver(()=>{ if(LAST) render(LAST.res,LAST.firing,LAST.truth); })
+  .observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+/* open in a working state */
+bar.children[0].click();
+</script>
